@@ -1,0 +1,3 @@
+model,accuracy,auc
+RandomForest,0.8,0.8560000000000001
+XGBoost,0.8,0.8513333333333333
