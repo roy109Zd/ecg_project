@@ -456,7 +456,7 @@ def api_report():
 - 熬夜习惯: {patient_info.get('late_night', '未填写')}
 - 运动频率: {patient_info.get('exercise', '未填写')}
 """
-    api_key = "sk-7eb7b002610a41678066afd1c41c777b"
+    api_key = "NONE"
     try:
         client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
         response = client.chat.completions.create(
