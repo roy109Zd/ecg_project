@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>实时心电监测系统 - 医疗级 | 科技蓝灰</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+        body {
+            font-family: 'Segoe UI', 'Inter', sans-serif;
+            background: #0f172a;
+            padding: 20px;
+            height: 100%;
+        }
+        .container {
+            max-width: 1600px;
+            height: 100%;
+            margin: 0 auto;
+            display: flex;
+            gap: 24px;
+            overflow: hidden;
+        }
+        .sidebar {
+            flex: 1.2;
+            min-width: 340px;
+            height: 100%;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            padding-right: 4px;
+        }
+        .content {
+            flex: 2.5;
+            min-width: 400px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            overflow-y: hidden;
+            justify-content: flex-start;
+        }
+        .card {
+            background: #1e293b;
+            border-radius: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            transition: all 0.2s ease;
+            border: 1px solid #334155;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px rgba(59,130,246,0.25);
+            border-color: #60a5fa;
+        }
+        .card-header {
+            padding: 18px 24px 0 24px;
+        }
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #60a5fa;
+            border-left: 4px solid #3b82f6;
+            padding-left: 14px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .card-content {
+            padding: 0 24px 20px 24px;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 16px;
+            border: 1px solid #334155;
+            background: #0f172a;
+            color: #f1f5f9;
+            font-size: 14px;
+            margin-bottom: 14px;
+            transition: all 0.2s ease;
+        }
+        select option {
+            background: #1e293b;
+            color: #f1f5f9;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.3);
+        }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #e2e8f0;
+        }
+        .hr-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 16px 0 8px;
+        }
+        .hr-stat {
+            background: rgba(59,130,246,0.1);
+            border-radius: 20px;
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #334155;
+        }
+        .hr-stat-label {
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        .hr-stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #60a5fa;
+        }
+        .hr-big {
+            font-size: 64px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #60a5fa, #f43f5e);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: inline-block;
+            margin-right: 8px;
+            font-family: 'Inter', monospace;
+        }
+        .hr-unit {
+            font-size: 24px;
+            color: #94a3b8;
+        }
+        .hr-status {
+            font-size: 16px;
+            font-weight: 500;
+            margin: 8px 0;
+        }
+        .hr-tip {
+            font-size: 12px;
+            color: #94a3b8;
+            background: rgba(59,130,246,0.15);
+            padding: 8px 12px;
+            border-radius: 32px;
+            display: inline-block;
+        }
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(244,63,94,0.4); }
+            70% { box-shadow: 0 0 0 12px rgba(244,63,94,0); }
+            100% { box-shadow: 0 0 0 0 rgba(244,63,94,0); }
+        }
+        .heart-icon {
+            display: inline-block;
+            animation: pulse-ring 1.5s infinite;
+            border-radius: 50%;
+            font-size: 28px;
+            margin-right: 6px;
+            vertical-align: middle;
+            color: #f43f5e;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 8px;
+        }
+        .feature-item {
+            background: rgba(59,130,246,0.05);
+            border-radius: 20px;
+            padding: 10px 8px;
+            text-align: center;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+            position: relative;
+        }
+        .feature-item:hover {
+            border-color: #3b82f6;
+            background: rgba(59,130,246,0.1);
+        }
+        .feature-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            color: #60a5fa;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .feature-value {
+            font-size: 20px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            color: #f1f5f9;
+        }
+        .info-icon {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            background: #3b82f6;
+            border-radius: 50%;
+            color: white;
+            font-size: 10px;
+            text-align: center;
+            line-height: 16px;
+            cursor: pointer;
+            margin-left: 6px;
+            font-weight: bold;
+        }
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+            align-items: center;
+        }
+        button, .window-select {
+            background: #3b82f6;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        button:hover, .window-select:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+        }
+        .window-select {
+            background: #475569;
+        }
+        .window-select:hover {
+            background: #334155;
+        }
+        button.secondary {
+            background: #475569;
+        }
+        button.secondary:hover {
+            background: #334155;
+        }
+        button.accent {
+            background: #f43f5e;
+        }
+        button.accent:hover {
+            background: #e11d48;
+        }
+        .log {
+            background: #0f172a;
+            color: #a5f3c3;
+            font-family: 'Fira Code', monospace;
+            font-size: 12px;
+            padding: 14px;
+            border-radius: 20px;
+            height: 110px;
+            overflow-y: auto;
+            border: 1px solid #334155;
+        }
+        .chat-box {
+            background: rgba(15,23,42,0.6);
+            border-radius: 20px;
+            max-height: 320px;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .chat-question {
+            background: #3b82f6;
+            color: white;
+            text-align: right;
+            padding: 12px 18px;
+            border-radius: 24px 24px 8px 24px;
+            max-width: 85%;
+            align-self: flex-end;
+            line-height: 1.5;
+            word-wrap: break-word;
+            font-size: 14px;
+        }
+        .chat-answer {
+            background: #2d3a4e;
+            border: 1px solid #334155;
+            padding: 12px 18px;
+            border-radius: 24px 24px 24px 8px;
+            max-width: 85%;
+            align-self: flex-start;
+            line-height: 1.5;
+            word-wrap: break-word;
+            font-size: 14px;
+            color: #f1f5f9;
+        }
+        .chat-time {
+            font-size: 10px;
+            color: #94a3b8;
+            margin-top: 4px;
+            display: block;
+        }
+        .canvas-container {
+            padding: 8px;
+            background: #0f172a;
+            border-radius: 24px;
+        }
+        canvas {
+            width: 100%;
+            background: #0f172a;
+            border-radius: 20px;
+            display: block;
+        }
+        #waveCanvas {
+            height: 280px;
+            background: radial-gradient(circle at 10% 20%, rgba(59,130,246,0.05) 0%, rgba(15,23,42,1) 80%);
+        }
+        #hrCanvas {
+            height: 200px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: #1e293b;
+            margin: auto;
+            padding: 24px;
+            border-radius: 32px;
+            width: 90%;
+            max-width: 750px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.4);
+            animation: fadeInUp 0.2s ease;
+            border: 1px solid #60a5fa;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .close {
+            color: #94a3b8;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .close:hover { color: #f43f5e; }
+
+        /* 强制 AI 报告文字为白色 */
+        #reportContent, #modalReportBody {
+            color: #f1f5f9;
+        }
+
+        @media (max-width: 800px) {
+            body { padding: 12px; }
+            .sidebar { min-width: 280px; }
+            .feature-grid { grid-template-columns: 1fr; }
+            .btn-group { flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- 左侧可滚动区域 -->
+    <div class="sidebar">
+        <!-- 心率卡片 -->
+        <div class="card">
+            <div class="card-content" style="text-align: center;">
+                <div><span class="heart-icon">❤️</span><span class="hr-big" id="currentHr">--</span><span class="hr-unit">bpm</span></div>
+                <div class="hr-status" id="hrStatus">⚪ 等待数据</div>
+                <div class="hr-grid">
+                    <div class="hr-stat"><div class="hr-stat-label">平均心率</div><div class="hr-stat-value" id="avgHrStat">--</div></div>
+                    <div class="hr-stat"><div class="hr-stat-label">最小心率</div><div class="hr-stat-value" id="minHrStat">--</div></div>
+                    <div class="hr-stat"><div class="hr-stat-label">最大心率</div><div class="hr-stat-value" id="maxHrStat">--</div></div>
+                </div>
+                <div class="hr-tip">💡 提示：最高心率可能受运动或干扰影响，仅供参考</div>
+            </div>
+        </div>
+
+        <!-- 个人信息卡片 -->
+        <div class="card">
+            <div class="card-header"><div class="card-title">👤 个人信息</div></div>
+            <div class="card-content">
+                <label>年龄（岁）</label><input type="number" id="age" value="20">
+                <label>性别</label><select id="gender"><option>男</option><option>女</option></select>
+                <label>身高（cm）</label><input type="number" id="height" value="175">
+                <label>体重（kg）</label><input type="number" id="weight" value="60">
+            </div>
+        </div>
+
+        <!-- 生活习惯与病史卡片（默认值按图片设置） -->
+        <div class="card">
+            <div class="card-header"><div class="card-title">📋 生活习惯与病史</div></div>
+            <div class="card-content">
+                <label>吸烟</label>
+                <select id="smoking">
+                    <option>未填写</option>
+                    <option>是</option>
+                    <option selected>否</option>
+                </select>
+                <label>饮酒</label>
+                <select id="alcohol">
+                    <option>未填写</option>
+                    <option>经常</option>
+                    <option selected>偶尔</option>
+                    <option>从不</option>
+                </select>
+                <label>高血压</label>
+                <select id="hypertension">
+                    <option>未填写</option>
+                    <option>是</option>
+                    <option selected>否</option>
+                </select>
+                <label>糖尿病</label>
+                <select id="diabetes">
+                    <option>未填写</option>
+                    <option>是</option>
+                    <option selected>否</option>
+                </select>
+                <label>冠心病史</label>
+                <select id="cad">
+                    <option>未填写</option>
+                    <option>是</option>
+                    <option selected>否</option>
+                </select>
+                <label>熬夜习惯</label>
+                <select id="late_night">
+                    <option>未填写</option>
+                    <option selected>经常</option>
+                    <option>偶尔</option>
+                    <option>从不</option>
+                </select>
+                <label>运动频率</label>
+                <select id="exercise">
+                    <option>未填写</option>
+                    <option selected>经常</option>
+                    <option>有时</option>
+                    <option>很少</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 实时心电特征卡片（移除 QTc 和 ST 段偏移） -->
+        <div class="card">
+            <div class="card-header"><div class="card-title">📊 实时心电特征 <span style="font-size:12px;">(点击?查看说明)</span></div></div>
+            <div class="card-content">
+                <button id="computeFeaturesBtn" class="accent" style="width:100%; margin-bottom:16px;">🔬 计算特征</button>
+                <div class="feature-grid">
+                    <div class="feature-item"><div class="feature-label">⚡ PR间期 <span class="info-icon" data-info="PR间期：从P波起点到QRS波起点的时间，反映房室传导。正常120-200ms。">?</span></div><div class="feature-value" id="pr">-- ms</div></div>
+                    <div class="feature-item"><div class="feature-label">📐 QRS宽度 <span class="info-icon" data-info="QRS宽度：心室除极时间，正常<100ms，>120ms提示束支阻滞或室性心律。">?</span></div><div class="feature-value" id="qrs">-- ms</div></div>
+                    <div class="feature-item"><div class="feature-label">⌛ QT间期 <span class="info-icon" data-info="QT间期：心室除极和复极总时间，正常约320-440ms。">?</span></div><div class="feature-value" id="qt">-- ms</div></div>
+                    <div class="feature-item"><div class="feature-label">💓 SDNN <span class="info-icon" data-info="SDNN：心率变异性指标，反映自主神经功能，<30ms提示降低。">?</span></div><div class="feature-value" id="sdnn">-- ms</div></div>
+                    <div class="feature-item"><div class="feature-label">🔄 RMSSD <span class="info-icon" data-info="RMSSD：短期心率变异性，主要反映迷走神经张力。">?</span></div><div class="feature-value" id="rmssd">-- ms</div></div>
+                    <div class="feature-item"><div class="feature-label">📊 平均心率 <span class="info-icon" data-info="平均心率：最近10秒内的平均每分钟心跳次数。">?</span></div><div class="feature-value" id="avgHrFeature">-- bpm</div></div>
+                    <div class="feature-item"><div class="feature-label">🔊 信号质量 <span class="info-icon" data-info="信号质量：评估心电信号受干扰程度，>70%为良好。">?</span></div><div class="feature-value" id="quality">--%</div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI 诊断报告 -->
+        <div class="card">
+            <div class="card-header"><div class="card-title">🩺 AI 诊断报告</div></div>
+            <div class="card-content">
+                <select id="analysisMode"><option value="detailed">📖 详细分析</option><option value="simple">📄 简洁分析</option></select>
+                <button id="reportBtn" class="accent" style="width:100%; justify-content:center;">🚀 生成 AI 报告</button>
+                <div id="reportContent" style="margin-top:16px; background:rgba(15,23,42,0.5); padding:14px; border-radius:20px; max-height:280px; overflow-y:auto; font-size:13px; line-height:1.5;"></div>
+                <button id="viewReportDetailBtn" class="secondary" style="margin-top:10px; display:none; width:100%;">📄 查看报告详情</button>
+            </div>
+        </div>
+
+        <!-- 智能问诊 -->
+        <div class="card">
+            <div class="card-header"><div class="card-title">💬 智能问诊</div></div>
+            <div class="card-content">
+                <div id="chatHistory" class="chat-box">
+                    <div class="chat-answer">您好，我是心电助手。请提出您的问题，我会结合您的心电数据回答。</div>
+                </div>
+                <div style="display:flex; gap:10px; margin-top:14px;">
+                    <input type="text" id="chatInput" placeholder="例如：我的ST段偏移严重吗？" style="margin:0;">
+                    <button id="sendChatBtn">发送</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 运行日志 -->
+        <div class="card">
+            <div class="card-header"><div class="card-title">📋 运行日志</div></div>
+            <div class="card-content"><div class="log" id="logPanel">[系统] 正在连接实时数据流...</div></div>
+        </div>
+    </div>
+
+    <!-- 右侧固定区域 -->
+    <div class="content">
+        <div class="card">
+            <div class="card-header"><div class="card-title">📈 实时心电波形</div></div>
+            <div class="card-content">
+                <div class="btn-group">
+                    <button id="pauseBtn" class="secondary"><i>⏸️</i> 暂停滚动</button>
+                    <button id="resumeBtn" class="accent"><i>▶️</i> 恢复滚动</button>
+                    <select id="windowSelect" class="window-select">
+                        <option value="2">2 秒窗口</option>
+                        <option value="4" selected>4 秒窗口</option>
+                        <option value="10">10 秒窗口</option>
+                    </select>
+                </div>
+                <div class="canvas-container"><canvas id="waveCanvas" width="800" height="280"></canvas></div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header"><div class="card-title">💓 心率变化曲线（最近30秒）</div></div>
+            <div class="card-content"><div class="canvas-container"><canvas id="hrCanvas" width="800" height="200"></canvas></div></div>
+        </div>
+    </div>
+</div>
+
+<!-- 模态框 -->
+<div id="reportModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3 style="color:#60a5fa; margin-bottom:12px;">📄 完整诊断报告</h3>
+        <div id="modalReportBody" style="max-height:70vh; overflow-y:auto;"></div>
+    </div>
+</div>
+
+<script>
+    // 全局数据
+    let currentWaveform = [];
+    let currentBpm = 0;
+    let fs = 250;
+    let hrHistory = [];
+    let paused = false;
+
+    const waveCanvas = document.getElementById('waveCanvas'), waveCtx = waveCanvas.getContext('2d');
+    const hrCanvas = document.getElementById('hrCanvas'), hrCtx = hrCanvas.getContext('2d');
+    const logPanel = document.getElementById('logPanel');
+    const currentHrSpan = document.getElementById('currentHr');
+    const hrStatusDiv = document.getElementById('hrStatus');
+    const avgHrStat = document.getElementById('avgHrStat');
+    const minHrStat = document.getElementById('minHrStat');
+    const maxHrStat = document.getElementById('maxHrStat');
+    const reportBtn = document.getElementById('reportBtn');
+    const reportContent = document.getElementById('reportContent');
+    const viewReportDetailBtn = document.getElementById('viewReportDetailBtn');
+    const sendChatBtn = document.getElementById('sendChatBtn');
+    const chatInput = document.getElementById('chatInput');
+    const chatHistory = document.getElementById('chatHistory');
+    const modal = document.getElementById('reportModal');
+    const modalBody = document.getElementById('modalReportBody');
+    const closeModal = document.querySelector('.close');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resumeBtn = document.getElementById('resumeBtn');
+    const windowSelect = document.getElementById('windowSelect');
+    const computeFeaturesBtn = document.getElementById('computeFeaturesBtn');
+
+    // 更新 DOM 元素 ID：删除 qtc 和 st，新增 qt
+    const prSpan = document.getElementById('pr'), qrsSpan = document.getElementById('qrs');
+    const qtSpan = document.getElementById('qt');   // 新增 QT 间期
+    const sdnnSpan = document.getElementById('sdnn'), rmssdSpan = document.getElementById('rmssd');
+    const avgHrFeature = document.getElementById('avgHrFeature'), qualitySpan = document.getElementById('quality');
+
+    let lastReportHtml = "";
+
+    function addLog(msg) {
+        const time = new Date().toLocaleTimeString();
+        logPanel.innerHTML += `[${time}] ${msg}<br>`;
+        logPanel.scrollTop = logPanel.scrollHeight;
+        console.log(msg);
+    }
+
+    // 特征计算按钮
+    computeFeaturesBtn.onclick = async () => {
+        computeFeaturesBtn.innerText = "⏳ 计算中...";
+        computeFeaturesBtn.disabled = true;
+        try {
+            const res = await fetch('/api/compute_features', { method: 'POST' });
+            const data = await res.json();
+            if (data.error) {
+                addLog("特征计算失败: " + data.error);
+            } else {
+                updateFeatures(data);
+                addLog("特征计算完成");
+            }
+        } catch(e) {
+            addLog("特征计算请求失败: " + e.message);
+        } finally {
+            computeFeaturesBtn.innerText = "🔬 计算特征";
+            computeFeaturesBtn.disabled = false;
+        }
+    };
+
+    function drawWaveform() {
+        if (paused) return;
+        if (!currentWaveform.length) return;
+        const w = waveCanvas.clientWidth, h = waveCanvas.clientHeight;
+        waveCanvas.width = w; waveCanvas.height = h;
+        const ctx = waveCtx;
+        ctx.clearRect(0,0,w,h);
+        ctx.strokeStyle = "#475569";
+        ctx.lineWidth = 0.5;
+        for(let i=0;i<=4;i++){ let y=i*h/4; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+        const yMin = -2000, yMax = 3000;
+        const range = yMax - yMin;
+        const yScale = (h - 40) / range;
+        const yOffset = 20 - yMin * yScale;
+        ctx.beginPath(); ctx.strokeStyle = "#f43f5e"; ctx.lineWidth = 2.5;
+        for(let i=0;i<currentWaveform.length;i++){ 
+            let x = (i/(currentWaveform.length-1))*w;
+            let y = currentWaveform[i] * yScale + yOffset;
+            if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+        }
+        ctx.stroke();
+        ctx.font = "12px 'Segoe UI'"; ctx.fillStyle = "#f43f5e"; ctx.fillText(`实时心率: ${currentBpm} bpm`, 12, 22);
+    }
+
+    function drawHrCurve() {
+        if(hrHistory.length===0) return;
+        const w=hrCanvas.clientWidth, h=hrCanvas.clientHeight;
+        hrCanvas.width=w; hrCanvas.height=h;
+        const ctx=hrCtx; ctx.clearRect(0,0,w,h);
+        ctx.strokeStyle="#475569"; ctx.lineWidth=0.5;
+        for(let i=0;i<=4;i++){ let y=i*h/4; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+        const stepX=w/(hrHistory.length-1);
+        ctx.beginPath(); ctx.strokeStyle="#3b82f6"; ctx.lineWidth=2.5;
+        for(let i=0;i<hrHistory.length;i++){ let x=i*stepX, y=h-(hrHistory[i]/200)*h; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }
+        ctx.stroke();
+        ctx.beginPath(); ctx.strokeStyle="#f43f5e"; ctx.lineWidth=1.5; ctx.setLineDash([5,5]);
+        let y60=h-(60/200)*h; ctx.moveTo(0,y60); ctx.lineTo(w,y60); ctx.stroke();
+        let y100=h-(100/200)*h; ctx.beginPath(); ctx.moveTo(0,y100); ctx.lineTo(w,y100); ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    function updateHrStatus() {
+        if(currentBpm<60&&currentBpm>0) { hrStatusDiv.innerHTML="💚 心率偏低 (心动过缓)"; hrStatusDiv.style.color="#60a5fa"; }
+        else if(currentBpm<=100&&currentBpm>0) { hrStatusDiv.innerHTML="💚 心率正常"; hrStatusDiv.style.color="#4ade80"; }
+        else if(currentBpm>100) { hrStatusDiv.innerHTML="❤️ 心率偏高 (心动过速)"; hrStatusDiv.style.color="#f43f5e"; }
+        else { hrStatusDiv.innerHTML="⚪ 等待数据"; hrStatusDiv.style.color="#94a3b8"; }
+        currentHrSpan.innerText = currentBpm>0 ? Math.round(currentBpm) : "--";
+    }
+
+    async function updateHeartRateStats() {
+        try {
+            const res = await fetch('/api/heartrate_stats');
+            const stats = await res.json();
+            if(stats.avg) avgHrStat.innerText = stats.avg;
+            if(stats.min) minHrStat.innerText = stats.min;
+            if(stats.max) maxHrStat.innerText = stats.max;
+        } catch(e) { console.error("获取心率统计失败", e); }
+    }
+
+    function updateFeatures(features) {
+        const updateElement = (id, value) => {
+            const el = document.getElementById(id);
+            if(el && value !== undefined) {
+                el.classList.add('feature-updated');
+                setTimeout(()=>el.classList.remove('feature-updated'), 300);
+                el.innerText = value;
+            }
+        };
+        if(features['PR间期 (ms)']) updateElement('pr', features['PR间期 (ms)']+' ms');
+        if(features['QRS宽度 (ms)']) updateElement('qrs', features['QRS宽度 (ms)']+' ms');
+        if(features['QT间期 (ms)']) updateElement('qt', features['QT间期 (ms)']+' ms');   // 注意键名匹配
+        if(features['SDNN (ms)']) updateElement('sdnn', features['SDNN (ms)']+' ms');
+        if(features['RMSSD (ms)']) updateElement('rmssd', features['RMSSD (ms)']+' ms');
+        if(features['平均心率 (bpm)']) updateElement('avgHrFeature', features['平均心率 (bpm)']+' bpm');
+        if(features['信号质量']) updateElement('quality', features['信号质量']);
+    }
+
+    async function changeWindow(seconds) {
+        try {
+            const res = await fetch('/api/set_window', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ window_sec: parseFloat(seconds) })
+            });
+            const data = await res.json();
+            addLog(`显示窗口已更改为 ${data.window_sec} 秒`);
+        } catch(e) { addLog("修改窗口失败: " + e.message); }
+    }
+
+    windowSelect.addEventListener('change', (e) => changeWindow(e.target.value));
+
+    const eventSource = new EventSource('/stream');
+    eventSource.onopen = ()=>addLog("实时数据流已连接");
+    eventSource.onerror = ()=>addLog("连接断开，尝试重连...");
+    eventSource.onmessage = (event)=>{
+        try {
+            const data = JSON.parse(event.data);
+            if(data.waveform && data.waveform.length) { currentWaveform = data.waveform; drawWaveform(); }
+            if(data.bpm !== undefined) {
+                currentBpm = data.bpm;
+                if(currentBpm>0) { hrHistory.push(currentBpm); if(hrHistory.length>300) hrHistory.shift(); drawHrCurve(); updateHrStatus(); }
+            }
+            if(data.fs) fs = data.fs;
+        } catch(e) { console.error(e); }
+    };
+
+    pauseBtn.onclick = () => { paused = true; addLog("波形已暂停"); };
+    resumeBtn.onclick = () => { paused = false; drawWaveform(); addLog("波形恢复滚动"); };
+
+    reportBtn.onclick = async () => {
+        const age=document.getElementById('age').value, gender=document.getElementById('gender').value;
+        const height=document.getElementById('height').value, weight=document.getElementById('weight').value;
+        if(!age||!height||!weight) { alert("请填写年龄、身高、体重"); return; }
+        const bmi = (weight / ((height/100)**2)).toFixed(1);
+        const patient_info = { age:parseInt(age), gender, bmi:parseFloat(bmi), height:parseFloat(height), weight:parseFloat(weight),
+            smoking:document.getElementById('smoking').value, alcohol:document.getElementById('alcohol').value,
+            hypertension:document.getElementById('hypertension').value, diabetes:document.getElementById('diabetes').value,
+            cad:document.getElementById('cad').value, late_night:document.getElementById('late_night').value,
+            exercise:document.getElementById('exercise').value };
+        const mode = document.getElementById('analysisMode').value;
+        reportContent.innerHTML = "正在生成AI报告...";
+        try{
+            const res = await fetch('/api/report', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ patient_info, mode }) });
+            const data = await res.json();
+            if(data.error) { reportContent.innerHTML = `<span style="color:red;">${data.error}</span>`; lastReportHtml=""; viewReportDetailBtn.style.display='none'; }
+            else { const formatted = data.report.replace(/\n/g,'<br>'); reportContent.innerHTML = formatted; lastReportHtml=formatted; viewReportDetailBtn.style.display='inline-block'; }
+        } catch(e){ reportContent.innerHTML=`<span style="color:red;">请求失败: ${e.message}</span>`; lastReportHtml=""; viewReportDetailBtn.style.display='none'; }
+    };
+    viewReportDetailBtn.onclick = () => { if(lastReportHtml) { modalBody.innerHTML = lastReportHtml; modal.style.display = 'flex'; } else alert("暂无报告内容"); };
+    closeModal.onclick = () => modal.style.display = 'none';
+    window.onclick = (e) => { if(e.target === modal) modal.style.display = 'none'; };
+
+    function addChatMessage(text, isUser) {
+        const div = document.createElement('div');
+        div.className = isUser ? 'chat-question' : 'chat-answer';
+        div.innerHTML = `<div>${text.replace(/\n/g, '<br>')}</div><span class="chat-time">${new Date().toLocaleTimeString()}</span>`;
+        chatHistory.appendChild(div);
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+    }
+
+    sendChatBtn.onclick = async () => {
+        const question = chatInput.value.trim();
+        if(!question) return;
+        addChatMessage(question, true);
+        chatInput.value = '';
+        try{
+            const res = await fetch('/api/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ question }) });
+            const data = await res.json();
+            const answer = data.error ? "错误："+data.error : data.answer;
+            addChatMessage(answer, false);
+        } catch(e){ addLog("对话错误:"+e.message); }
+    };
+    chatInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') sendChatBtn.click(); });
+
+    document.querySelectorAll('.info-icon').forEach(icon => {
+        icon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const info = icon.getAttribute('data-info');
+            if(info) alert(info);
+        });
+    });
+
+    setInterval(updateHeartRateStats, 2000);
+    updateHeartRateStats();
+    window.addEventListener('resize', ()=>{ drawWaveform(); drawHrCurve(); });
+</script>
+</body>
+</html>
